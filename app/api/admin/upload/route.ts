@@ -1,10 +1,7 @@
 import { promises as fs } from "fs"
 import path from "path"
 import { NextResponse } from "next/server"
-import { getStore } from "@netlify/blobs"
 import { put } from "@vercel/blob"
-
-import { onNetlify } from "@/lib/tour-store"
 
 export const dynamic = "force-dynamic"
 
@@ -42,15 +39,6 @@ export async function POST(request: Request) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 40)
   const filename = `${Date.now()}-${base || "photo"}${ext}`
-
-  if (onNetlify()) {
-    // Netlify Blobs are private; /api/photos/[...key] streams them publicly
-    const store = getStore({ name: "photos", consistency: "strong" })
-    await store.set(filename, file, {
-      metadata: { contentType: file.type },
-    })
-    return NextResponse.json({ url: `/api/photos/${filename}` })
-  }
 
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     const blob = await put(`tours/uploads/${filename}`, file, {

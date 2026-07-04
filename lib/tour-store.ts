@@ -1,29 +1,19 @@
 import { promises as fs } from "fs"
 import path from "path"
-import { getStore } from "@netlify/blobs"
 import { list, put } from "@vercel/blob"
 
 import { seedTours, type Tour, type TourStatus } from "@/lib/tours"
 
-// Tours live in a single JSON document. Backend is picked automatically:
-// Netlify Blobs on Netlify, Vercel Blob when BLOB_READ_WRITE_TOKEN is set,
-// otherwise a gitignored local file. First read seeds from lib/tours.ts.
+// Tours live in a single JSON blob on Vercel Blob in production and in a
+// gitignored local file during development. First read seeds from lib/tours.ts.
 
 const BLOB_PATH = "data/tours.json"
 const LOCAL_PATH = path.join(process.cwd(), ".data", "tours.json")
 
-export const onNetlify = () =>
-  Boolean(process.env.NETLIFY || process.env.NETLIFY_BLOBS_CONTEXT)
 const hasVercelBlob = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN)
-
-const netlifyStore = () => getStore({ name: "tours", consistency: "strong" })
 
 async function readAll(): Promise<Tour[]> {
   try {
-    if (onNetlify()) {
-      const data = await netlifyStore().get(BLOB_PATH, { type: "json" })
-      return (data as Tour[] | null) ?? seedTours
-    }
     if (hasVercelBlob()) {
       const { blobs } = await list({ prefix: BLOB_PATH, limit: 1 })
       if (blobs.length === 0) return seedTours
@@ -40,9 +30,7 @@ async function readAll(): Promise<Tour[]> {
 
 async function writeAll(tours: Tour[]): Promise<void> {
   const json = JSON.stringify(tours, null, 2)
-  if (onNetlify()) {
-    await netlifyStore().setJSON(BLOB_PATH, tours)
-  } else if (hasVercelBlob()) {
+  if (hasVercelBlob()) {
     await put(BLOB_PATH, json, {
       access: "public",
       addRandomSuffix: false,

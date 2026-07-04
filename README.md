@@ -1,7 +1,7 @@
 # Urban Travel — urban-travel.uz
 
 Сайт туристического агентства Urban Travel (Ташкент): туры в Китай, RU/UZ.
-Next.js 16 (App Router) + Tailwind CSS 4 + shadcn/ui. Работает на Netlify и Vercel.
+Next.js 16 (App Router) + Tailwind CSS 4 + shadcn/ui. Хостинг — Vercel.
 
 ## Разработка
 
@@ -19,7 +19,7 @@ npm run dev                  # http://localhost:3000
 | `TELEGRAM_CHAT_ID` | да | Чат, куда бот шлёт заявки |
 | `ADMIN_PASSWORD` | да | Пароль входа в админ-панель `/admin` |
 | `ADMIN_SESSION_SECRET` | нет | Отдельный секрет для cookie-сессий (по умолчанию — `ADMIN_PASSWORD`) |
-| `BLOB_READ_WRITE_TOKEN` | только на Vercel | Vercel Blob; на Netlify не нужен (используются Netlify Blobs) |
+| `BLOB_READ_WRITE_TOKEN` | на Vercel | Vercel Blob: хранение туров и загруженных фото |
 | `NEXT_PUBLIC_GA_ID` | нет | Google Analytics 4 |
 | `NEXT_PUBLIC_YM_ID` | нет | Яндекс Метрика |
 
@@ -29,14 +29,12 @@ npm run dev                  # http://localhost:3000
 архивирование и удаление. Архивные туры скрываются из списков и sitemap, но их
 страницы остаются доступны с пометкой «тур завершён» (noindex).
 
-Данные туров хранятся одним JSON-документом; бэкенд выбирается автоматически:
+Данные туров хранятся одним JSON-документом:
 
-- **Netlify:** встроенные Netlify Blobs — настраивать нечего. Загруженные фото
-  раздаются через `/api/photos/...`. Добавьте только `ADMIN_PASSWORD`
-  (Site configuration → Environment variables).
-- **Vercel:** Vercel Blob (`data/tours.json`), фото — там же. В дашборде:
-  Storage → Create Database → Blob (`BLOB_READ_WRITE_TOKEN` подставится сам),
-  плюс `ADMIN_PASSWORD` в Settings → Environment Variables.
+- **Vercel (production):** Vercel Blob (`data/tours.json`), фото — там же.
+  В дашборде Vercel: Storage → Create Database → Blob, после чего
+  `BLOB_READ_WRITE_TOKEN` подставится автоматически. Затем добавьте
+  `ADMIN_PASSWORD` в Settings → Environment Variables.
 - **Локально:** файл `.data/tours.json` (в gitignore), фото — `public/uploads/`.
 
 Если хранилище пусто, туры берутся из сида `lib/tours.ts` (`seedTours`).
