@@ -2,9 +2,9 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
-  useState,
-  useEffect,
+  useSyncExternalStore,
   type ReactNode,
 } from "react"
 import type { Language } from "@/lib/translations"
@@ -19,20 +19,32 @@ const LanguageContext = createContext<LanguageContextValue>({
   setLang: () => {},
 })
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Language>("ru")
+// The chosen language lives in localStorage; useSyncExternalStore keeps React
+// in sync with it without a hydration mismatch (server always renders "ru").
+let listeners: Array<() => void> = []
 
-  useEffect(() => {
-    const stored = localStorage.getItem("lang")
-    if (stored === "ru" || stored === "uz") {
-      setLangState(stored)
-    }
-  }, [])
-
-  const setLang = (newLang: Language) => {
-    setLangState(newLang)
-    localStorage.setItem("lang", newLang)
+function subscribe(listener: () => void) {
+  listeners.push(listener)
+  return () => {
+    listeners = listeners.filter((l) => l !== listener)
   }
+}
+
+function getSnapshot(): Language {
+  return localStorage.getItem("lang") === "uz" ? "uz" : "ru"
+}
+
+function getServerSnapshot(): Language {
+  return "ru"
+}
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const lang = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+
+  const setLang = useCallback((newLang: Language) => {
+    localStorage.setItem("lang", newLang)
+    listeners.forEach((l) => l())
+  }, [])
 
   return (
     <LanguageContext.Provider value={{ lang, setLang }}>

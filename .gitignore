@@ -31,6 +31,10 @@ pnpm-debug.log*
 # env files
 .env*.local
 
+# local tour data & uploads (dev fallback for Vercel Blob)
+/.data/
+/public/uploads/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

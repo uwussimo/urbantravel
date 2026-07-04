@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
 import { useLanguage } from "@/components/language-provider"
 import { translations } from "@/lib/translations"

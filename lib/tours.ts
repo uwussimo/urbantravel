@@ -1,21 +1,333 @@
 import type { Language } from "@/lib/translations"
 
+export type L10n<T = string> = Record<Language, T>
+
+export type TourStatus = "active" | "archived"
+
 export interface Tour {
   id: string
   slug: string
-  title: Record<Language, string>
-  route: Record<Language, string>
-  dates: Record<Language, string>
-  price: string
+  status: TourStatus
+  title: L10n
+  route: L10n
+  /** Display string for the nearest departure, e.g. "21–30 июля" */
+  dates: L10n
+  durationDays?: number
+  durationNights?: number
+  /** Price in USD */
+  priceFrom?: number
+  /** Render the "from / dan" prefix before the price */
+  priceIsFrom?: boolean
+  /** e.g. "международный авиаперелёт не включён" */
+  priceNote?: L10n
+  /** All departure windows when a tour runs multiple times */
+  departures?: L10n<string[]>
   photos: string[]
-  highlights: Record<Language, string[]>
-  content: Record<Language, string>
+  highlights: L10n<string[]>
+  included?: L10n<string[]>
+  notIncluded?: L10n<string[]>
+  content: L10n
+  updatedAt?: string
 }
 
-export const tours: Tour[] = [
+export function formatPrice(tour: Tour, lang: Language): string | null {
+  if (!tour.priceFrom) return null
+  const amount = `${tour.priceFrom} $`
+  if (!tour.priceIsFrom) return amount
+  return lang === "ru" ? `от ${amount}` : `${amount} dan`
+}
+
+export function formatDuration(tour: Tour, lang: Language): string | null {
+  if (!tour.durationDays) return null
+  const d = tour.durationDays
+  const n = tour.durationNights
+  if (lang === "ru") return n ? `${d} дней / ${n} ночей` : `${d} дней`
+  return n ? `${d} kun / ${n} kecha` : `${d} kun`
+}
+
+const SEED_DATE = "2026-07-04T00:00:00.000Z"
+
+export const seedTours: Tour[] = [
   {
-    id: "1",
+    id: "family-guangzhou-zhangjiajie",
+    slug: "family-guangzhou-zhangjiajie",
+    status: "active",
+    title: {
+      ru: "Семейный тур: Гуанчжоу – Чжанцзяцзе",
+      uz: "Oilaviy tur: Guangzhou – Chjanczyatsze",
+    },
+    route: {
+      ru: "Гуанчжоу – Чжанцзяцзе – Гуанчжоу",
+      uz: "Guangzhou – Chjanczyatsze – Guangzhou",
+    },
+    dates: {
+      ru: "21–30 июля",
+      uz: "21–30 iyul",
+    },
+    durationDays: 10,
+    durationNights: 9,
+    priceFrom: 1300,
+    priceIsFrom: true,
+    priceNote: {
+      ru: "международный авиаперелёт не включён",
+      uz: "xalqaro aviachipta narxga kirmagan",
+    },
+    photos: [
+      "/tours/family-guangzhou-zhangjiajie/tianmen-road.jpg",
+      "/tours/family-guangzhou-zhangjiajie/canton-tower.jpg",
+      "/tours/family-guangzhou-zhangjiajie/zhangjiajie-park.jpg",
+      "/tours/family-guangzhou-zhangjiajie/glass-bridge.jpg",
+      "/tours/family-guangzhou-zhangjiajie/guangzhou-square.jpg",
+    ],
+    highlights: {
+      ru: [
+        "Гуанчжоу — парк Юэсю и пешеходная Пекинская улица",
+        "Вечерний круиз по Жемчужной реке",
+        "Чжанцзяцзе — Национальный лесной парк, мир «Аватара»",
+        "Пещера Хуанлун и гора Тяньмэнь с «Небесными вратами»",
+        "Гранд-каньон и знаменитый стеклянный мост",
+        "Chimelong Resort — аттракционы и шоу для всей семьи",
+      ],
+      uz: [
+        "Guangzhou — Yuexiu bog'i va piyodalar Pekin ko'chasi",
+        "Marvarid daryosi bo'ylab kechki kruiz",
+        "Chjanczyatsze — Milliy o'rmon parki, «Avatar» olami",
+        "Xuanlong g'ori va «Osmon darvozalari» bilan Tyanmen tog'i",
+        "Grand-kanyon va mashhur shisha ko'prik",
+        "Chimelong Resort — butun oila uchun attraksionlar va shoular",
+      ],
+    },
+    notIncluded: {
+      ru: ["Международный авиаперелёт"],
+      uz: ["Xalqaro aviaparvoz"],
+    },
+    content: {
+      ru: `Путешествие для всей семьи: современные города, невероятная природа и лучшие развлечения Китая — всё в одном маршруте.
+
+Гуанчжоу встретит вас южным колоритом: прогулка по зелёному парку Юэсю, оживлённая пешеходная Пекинская улица и вечерний круиз по Жемчужной реке с огнями небоскрёбов.
+
+Чжанцзяцзе — мир «Аватара» наяву. Вас ждут парящие скалы Национального лесного парка, сказочная пещера Хуанлун, подъём на гору Тяньмэнь к «Небесным вратам», Гранд-каньон и прогулка по знаменитому стеклянному мосту.
+
+Финал путешествия — Chimelong Resort: аттракционы мирового уровня, шоу и развлечения, которые запомнятся и детям, и взрослым.
+
+Стоимость — от 1300 $ на человека. Международный авиаперелёт оплачивается отдельно. Количество мест в группе ограничено.`,
+      uz: `Butun oila uchun sayohat: zamonaviy shaharlar, aql bovar qilmas tabiat va Xitoyning eng zo'r ko'ngilochar maskanlari — barchasi bitta marshrutda.
+
+Guangzhou sizni janubiy fayzi bilan kutib oladi: yam-yashil Yuexiu bog'ida sayr, gavjum piyodalar Pekin ko'chasi va osmono'par binolar chiroqlari ostida Marvarid daryosi bo'ylab kechki kruiz.
+
+Chjanczyatsze — «Avatar» olamining o'zi. Sizni Milliy o'rmon parkining osmonda suzayotgan qoyalari, afsonaviy Xuanlong g'ori, «Osmon darvozalari» sari Tyanmen tog'iga ko'tarilish, Grand-kanyon va mashhur shisha ko'prik bo'ylab sayr kutmoqda.
+
+Sayohat yakuni — Chimelong Resort: jahon darajasidagi attraksionlar, shoular va bolalaru kattalarga birdek unutilmas taassurot beradigan o'yin-kulgilar.
+
+Narxi — kishi boshiga 1300 $ dan. Xalqaro aviachipta alohida to'lanadi. Guruhdagi joylar soni cheklangan.`,
+    },
+    updatedAt: SEED_DATE,
+  },
+  {
+    id: "fairy-tale-china",
+    slug: "fairy-tale-china",
+    status: "active",
+    title: {
+      ru: "Путешествие по сказочному Китаю",
+      uz: "Ertakdagi Xitoy bo'ylab sayohat",
+    },
+    route: {
+      ru: "Чэнду – Чжанцзяцзе – Фужун – Сиань",
+      uz: "Chengdu – Chjanczyatsze – Furong – Sian",
+    },
+    dates: {
+      ru: "Май – июль, 7 заездов",
+      uz: "May – iyul, 7 ta jo'nash",
+    },
+    durationDays: 9,
+    durationNights: 8,
+    priceFrom: 1524,
+    priceIsFrom: false,
+    priceNote: {
+      ru: "включая международный авиаперелёт",
+      uz: "xalqaro aviachiptalar narxga kiritilgan",
+    },
+    departures: {
+      ru: [
+        "11–19 мая",
+        "18–26 мая",
+        "25 мая – 2 июня",
+        "8–16 июня",
+        "15–23 июня",
+        "22–30 июня",
+        "29 июня – 7 июля",
+      ],
+      uz: [
+        "11–19 may",
+        "18–26 may",
+        "25 may – 2 iyun",
+        "8–16 iyun",
+        "15–23 iyun",
+        "22–30 iyun",
+        "29 iyun – 7 iyul",
+      ],
+    },
+    photos: [
+      "/tours/fairy-tale-china/furong-town.jpg",
+      "/tours/fairy-tale-china/chengdu-panda.jpg",
+      "/tours/fairy-tale-china/zhangjiajie-pillars.jpg",
+      "/tours/fairy-tale-china/tianmen-skywalk.jpg",
+      "/tours/fairy-tale-china/terracotta-army.jpg",
+      "/tours/fairy-tale-china/xian-wall.jpg",
+    ],
+    highlights: {
+      ru: [
+        "Чэнду (2 ночи) — знаменитые панды и сычуаньская кухня",
+        "Чжанцзяцзе (2 ночи) — горы «Аватара» и стеклянные мосты",
+        "Фужун (1 ночь) — древний город над водопадом",
+        "Сиань (3 ночи) — древняя столица Китая",
+        "Пандами, скалами и водопадами — всё в одном туре",
+      ],
+      uz: [
+        "Chengdu (2 kecha) — mashhur pandalar va Sichuan taomlari",
+        "Chjanczyatsze (2 kecha) — «Avatar» tog'lari va oynali ko'priklar",
+        "Furong (1 kecha) — sharshara ustidagi qadimiy shahar",
+        "Sian (3 kecha) — Xitoyning qadimiy poytaxti",
+        "Pandalar, qoyalar va sharsharalar — barchasi bitta safarda",
+      ],
+    },
+    included: {
+      ru: [
+        "Международные авиабилеты",
+        "Отели 4★",
+        "Завтраки",
+        "Внутренние перелёты и поезда",
+        "Все входные билеты",
+        "Русскоговорящий гид",
+      ],
+      uz: [
+        "Xalqaro aviachiptalar",
+        "4★ mehmonxonalar",
+        "Nonushta",
+        "Ichki reyslar va poezdlar",
+        "Barcha kirish chiptalari",
+        "Rus tilida gid",
+      ],
+    },
+    content: {
+      ru: `Панды, горы «Аватара», древние города, стеклянные мосты и город над водопадом — всё это в одном путешествии по самым сказочным уголкам Китая.
+
+Маршрут начинается в Чэнду (2 ночи) — вы увидите знаменитых панд в их «столице» и попробуете настоящую сычуаньскую кухню. Дальше — Чжанцзяцзе (2 ночи): парящие скалы, вдохновившие создателей «Аватара», канатные дороги и головокружительные стеклянные мосты.
+
+Фужун (1 ночь) — уникальный древний город, построенный прямо над водопадом: вечером он подсвечивается тысячами огней. Завершает маршрут Сиань (3 ночи) — древняя столица Китая, где история встречается на каждом шагу.
+
+В стоимость 1524 $ включено всё основное: международные авиабилеты, отели 4★ с завтраками, внутренние перелёты и поезда, все входные билеты и сопровождение русскоговорящего гида.
+
+Настоящий Китай откроем вместе!`,
+      uz: `Pandalar, «Avatar» tog'lari, qadimiy shaharlar, oynali ko'priklar, sharshara ustidagi shahar — barchasi Xitoyning eng ertaknamo go'shalari bo'ylab bitta safarda.
+
+Marshrut Chengdudan boshlanadi (2 kecha) — pandalar «poytaxtida» mashhur pandalarni ko'rasiz va haqiqiy Sichuan taomlaridan tatib ko'rasiz. Keyin — Chjanczyatsze (2 kecha): «Avatar» ijodkorlarini ilhomlantirgan osmonda suzayotgan qoyalar, osma yo'llar va bosh aylantiruvchi oynali ko'priklar.
+
+Furong (1 kecha) — to'g'ridan-to'g'ri sharshara ustiga qurilgan noyob qadimiy shahar: kechqurun u minglab chiroqlar bilan yoritiladi. Marshrutni Sian (3 kecha) yakunlaydi — har qadamda tarix nafasi ufurib turgan Xitoyning qadimiy poytaxti.
+
+1524 $ narxga barcha asosiylari kiritilgan: xalqaro aviachiptalar, nonushta bilan 4★ mehmonxonalar, ichki reyslar va poezdlar, barcha kirish chiptalari hamda rus tilida gid hamrohligi.
+
+Haqiqiy Xitoyni birga kashf qilamiz!`,
+    },
+    updatedAt: SEED_DATE,
+  },
+  {
+    id: "health-guangzhou-gulong",
+    slug: "health-guangzhou-gulong",
+    status: "active",
+    title: {
+      ru: "Оздоровительный тур в Китай",
+      uz: "Xitoyga sog'lomlashtiruvchi tur",
+    },
+    route: {
+      ru: "Гуанчжоу – Ущелье Гулун",
+      uz: "Guangzhou – Gulun darasi",
+    },
+    dates: {
+      ru: "22–30 июля",
+      uz: "22–30 iyul",
+    },
+    durationDays: 9,
+    durationNights: 8,
+    priceFrom: 1090,
+    priceIsFrom: true,
+    priceNote: {
+      ru: "без авиаперелёта",
+      uz: "aviachiptasiz",
+    },
+    photos: [
+      "/tours/health-guangzhou-gulong/IMG_0221.JPG",
+      "/tours/health-guangzhou-gulong/guangzhou-aerial.jpg",
+      "/tours/health-guangzhou-gulong/gorge-waterfall-1.jpg",
+      "/tours/health-guangzhou-gulong/gorge-waterfall-2.jpg",
+      "/tours/health-guangzhou-gulong/IMG_0223.jpg",
+    ],
+    highlights: {
+      ru: [
+        "Гуанчжоу — центр традиционной китайской медицины",
+        "Консультация специалистов традиционной китайской медицины",
+        "Оздоровительные процедуры и массаж туйна",
+        "Ущелье Гулун — водопады и тропические леса",
+        "Прогулка по долине «Тайна Гулун»",
+        "Стеклянный мост над ущельем с потрясающими видами",
+      ],
+      uz: [
+        "Guangzhou — an'anaviy xitoy tibbiyot markazi",
+        "An'anaviy xitoy tibbiyoti mutaxassislari konsultatsiyasi",
+        "Sog'lomlashtiruvchi muolajalar va tuyna massaji",
+        "Gulun darasi — sharsharalar va tropik o'rmonlar",
+        "«Gulun siri» vodiysida sayr",
+        "Dara ustidagi shisha ko'prik va ajoyib manzaralar",
+      ],
+    },
+    included: {
+      ru: [
+        "Отель 4★ + завтраки",
+        "Консультация и массаж",
+        "Все трансферы",
+        "Входные билеты",
+        "Русскоговорящий гид",
+        "Страховка",
+      ],
+      uz: [
+        "4★ mehmonxona + nonushta",
+        "Konsultatsiya va massaj",
+        "Barcha transferlar",
+        "Kirish chiptalari",
+        "Rus tilida gid",
+        "Sug'urta",
+      ],
+    },
+    notIncluded: {
+      ru: ["Авиаперелёт"],
+      uz: ["Aviaparvoz"],
+    },
+    content: {
+      ru: `Совместите отдых с заботой о здоровье! Оздоровительный тур в Китай — идеальное сочетание восстановления организма и знакомства с природными красотами юга страны.
+
+Гуанчжоу — один из главных центров традиционной китайской медицины. Во время тура вас ждёт консультация специалистов, которые подберут процедуры для восстановления организма, оздоровительные процедуры и лечебный массаж туйна.
+
+Вторая часть путешествия проходит в живописном ущелье Гулун — одном из самых красивых природных мест юга Китая: тропические леса, каскадные водопады и прогулка по долине «Тайна Гулун».
+
+Особое впечатление оставит прогулка по знаменитому стеклянному мосту над ущельем, открывающему захватывающие виды на горные пейзажи.
+
+Стоимость — от 1090 $ без авиаперелёта. В стоимость входят: отель 4★ с завтраками, консультация и массаж, все трансферы, входные билеты, русскоговорящий гид и страховка.`,
+      uz: `Dam olishni salomatlik haqidagi g'amxo'rlik bilan birlashtiring! Xitoyga sog'lomlashtiruvchi tur — organizmni tiklash va mamlakat janubining go'zal tabiatini kashf qilishning mukammal uyg'unligi.
+
+Guangzhou — an'anaviy xitoy tibbiyotining eng muhim markazlaridan biri. Safar davomida sizni mutaxassislar konsultatsiyasi kutadi: ular organizmni tiklash uchun muolajalarni tanlab beradilar, shuningdek sog'lomlashtiruvchi muolajalar va davolovchi tuyna massaji o'tkaziladi.
+
+Sayohatning ikkinchi qismi Xitoy janubidagi eng chiroyli tabiiy joylardan biri — manzarali Gulun darasida davom etadi: tropik o'rmonlar, kaskad sharsharalar va «Gulun siri» vodiysida sayr.
+
+Dara ustidagi mashhur shisha ko'prik bo'ylab yurish alohida taassurot qoldiradi — undan tog' manzaralarining hayratlanarli ko'rinishi ochiladi.
+
+Narxi — aviachiptasiz 1090 $ dan. Narxga kiradi: nonushta bilan 4★ mehmonxona, konsultatsiya va massaj, barcha transferlar, kirish chiptalari, rus tilida gid va sug'urta.`,
+    },
+    updatedAt: SEED_DATE,
+  },
+  {
+    id: "dental-south-china-2026",
     slug: "dental-south-china-2026",
+    status: "archived",
     title: {
       ru: "Dental South China 2026",
       uz: "Dental South China 2026",
@@ -28,10 +340,9 @@ export const tours: Tour[] = [
       ru: "2–5 марта 2026",
       uz: "2–5 mart 2026",
     },
-    price: "",
     photos: [
       "/tours/dental-south-china/IMG_0201.JPG",
-      "/tours/dental-south-china/IMG_0202.PNG",
+      "/tours/dental-south-china/IMG_0202.jpg",
     ],
     highlights: {
       ru: [
@@ -63,10 +374,12 @@ Urban Travel to'liq hamrohlikni tashkil etadi: siz shunchaki uchib kelasiz - qol
 
 Bu safari stomatologiya klinikasi egalari, tibbiy uskunalar distribyutorlari va sohadagi so'nggi tendentsiyalardan xabardor bo'lishni istagan shifokorlar uchun ideal.`,
     },
+    updatedAt: SEED_DATE,
   },
   {
-    id: "2",
+    id: "it-ai-business-trip",
     slug: "it-ai-business-trip",
+    status: "archived",
     title: {
       ru: "Бизнес поездка IT и AI",
       uz: "IT va AI biznes safari",
@@ -79,7 +392,8 @@ Bu safari stomatologiya klinikasi egalari, tibbiy uskunalar distribyutorlari va 
       ru: "Уточняйте",
       uz: "Aniqlashtiring",
     },
-    price: "от 1090$",
+    priceFrom: 1090,
+    priceIsFrom: true,
     photos: [
       "/tours/it-ai-business-trip/IMG_0195.JPG",
       "/tours/it-ai-business-trip/IMG_0197.JPG",
@@ -114,10 +428,12 @@ Bu safari xitoylik hamkorlar bilan bevosita biznes aloqalarini o'rnatishni, yaqi
 
 Urban Travel transfer, tarjimon va marshrutning barcha tashkiliy logistikasini ta'minlaydi.`,
     },
+    updatedAt: SEED_DATE,
   },
   {
-    id: "3",
+    id: "spring-fairy-tale",
     slug: "spring-fairy-tale",
+    status: "archived",
     title: {
       ru: "Весенняя сказка",
       uz: "Bahoriy ertak",
@@ -130,10 +446,11 @@ Urban Travel transfer, tarjimon va marshrutning barcha tashkiliy logistikasini t
       ru: "Уточняйте",
       uz: "Aniqlashtiring",
     },
-    price: "1090$",
+    priceFrom: 1090,
+    priceIsFrom: true,
     photos: [
       "/tours/spring-fairy-tale/IMG_0210.JPG",
-      "/tours/spring-fairy-tale/IMG_0209.PNG",
+      "/tours/spring-fairy-tale/IMG_0209.jpg",
     ],
     highlights: {
       ru: [
@@ -165,10 +482,12 @@ Kechqurun - madaniy restoranda haqiqiy Sichuan kechki ovqati, keyin esa haqiqiy 
 
 Tur narxi - ikki kishilik xonada 1090 USD, bir kishilik xonada 1290 USD. Aviachiptalar - 280 dan 400 USD gacha. Qolganini Urban Travel tashkil etadi.`,
     },
+    updatedAt: SEED_DATE,
   },
   {
-    id: "4",
+    id: "avatar-mountains",
     slug: "avatar-mountains",
+    status: "archived",
     title: {
       ru: "Горы Аватара",
       uz: "Avatar tog'lari",
@@ -181,7 +500,7 @@ Tur narxi - ikki kishilik xonada 1090 USD, bir kishilik xonada 1290 USD. Aviachi
       ru: "20–28 марта",
       uz: "20–28 mart",
     },
-    price: "1290$",
+    priceFrom: 1290,
     photos: [
       "/tours/avatar-mountains/IMG_0215.JPG",
       "/tours/avatar-mountains/IMG_0212.JPG",
@@ -220,10 +539,12 @@ Chjanczyatsze - so'z bilan ta'riflab bo'lmaydigan joy. Bulutlarda suzayotgan, ba
 
 Guangzhou sayohatni yakun yasaydi: Marvarid daryosi bo'ylab kechki kruiz, tungi megapolisning chiroqlari va eng yaxshi kanton taomlari. Sanalar: 20–28 mart. Joylar soni cheklangan.`,
     },
+    updatedAt: SEED_DATE,
   },
   {
-    id: "5",
+    id: "family-beijing",
     slug: "family-beijing",
+    status: "archived",
     title: {
       ru: "Семейный тур в Пекин",
       uz: "Pekinga oilaviy tur",
@@ -236,7 +557,7 @@ Guangzhou sayohatni yakun yasaydi: Marvarid daryosi bo'ylab kechki kruiz, tungi 
       ru: "21–28 марта",
       uz: "21–28 mart",
     },
-    price: "1090$",
+    priceFrom: 1090,
     photos: [
       "/tours/family-beijing/IMG_0211.JPG",
       "/tours/family-beijing/IMG_0219.JPG",
@@ -255,11 +576,11 @@ Guangzhou sayohatni yakun yasaydi: Marvarid daryosi bo'ylab kechki kruiz, tungi 
         "Стоимость 1090 USD (двухместное размещение)",
       ],
       uz: [
-        "Buyuk Xitoy devori — kanat yo‘li orqali ko‘tarilish va ajoyib manzaralar",
+        "Buyuk Xitoy devori — kanat yo'li orqali ko'tarilish va ajoyib manzaralar",
         "Bolalar uchun kung-fu mahorat darsi",
-        "Qianmen ko‘chasida sayr — an’anaviy Pekin muhiti",
+        "Qianmen ko'chasida sayr — an'anaviy Pekin muhiti",
         "Osmon ibodatxonasi — qadimgi Xitoy ramzi",
-        "Xitoy kaligrafiyasi bo‘yicha mahorat darsi",
+        "Xitoy kaligrafiyasi bo'yicha mahorat darsi",
         "Universal Studios Beijing — butun oila uchun mashhur attraksionlar",
         "Fan va texnologiya muzeyi hamda planetariy",
         "Safari park — yovvoyi hayvonlar orasida sayohat",
@@ -283,93 +604,18 @@ Guangzhou sayohatni yakun yasaydi: Marvarid daryosi bo'ylab kechki kruiz, tungi 
 Стоимость тура — 1090 USD при двухместном размещении. Это путешествие объединяет семью и дарит детям впечатления на всю жизнь.`,
       uz: `Pekinga oilaviy tur — bahorgi ta'tilda ota-onalar va bolalar uchun mukammal sayohat.
 
-Bu oddiy ekskursiya emas, balki tarix jonlanadigan, texnologiyalar hayratga soladigan va har bir kun yangi taassurotlarga boy bo‘lgan haqiqiy sarguzashtdir.
+Bu oddiy ekskursiya emas, balki tarix jonlanadigan, texnologiyalar hayratga soladigan va har bir kun yangi taassurotlarga boy bo'lgan haqiqiy sarguzashtdir.
 
-Siz kanat yo‘li orqali Buyuk Xitoy devoriga ko‘tarilib, dunyoning eng mashhur mo‘jizalaridan birini balandlikdan tomosha qilasiz. Bolalar kung-fu mahorat darsida o‘zlarini haqiqiy shogirddek his qiladilar va xitoy kaligrafiyasi darsida o‘z ismlarini ierogliflar bilan yozishni o‘rganadilar.
+Siz kanat yo'li orqali Buyuk Xitoy devoriga ko'tarilib, dunyoning eng mashhur mo'jizalaridan birini balandlikdan tomosha qilasiz. Bolalar kung-fu mahorat darsida o'zlarini haqiqiy shogirddek his qiladilar va xitoy kaligrafiyasi darsida o'z ismlarini ierogliflar bilan yozishni o'rganadilar.
 
-Qianmen ko‘chasida sayr qilish orqali an’anaviy Pekin muhitini his qilasiz, Osmon ibodatxonasi esa qadimgi Xitoy tarixini ochib beradi.
+Qianmen ko'chasida sayr qilish orqali an'anaviy Pekin muhitini his qilasiz, Osmon ibodatxonasi esa qadimgi Xitoy tarixini ochib beradi.
 
-Sayohatning eng yorqin kunlaridan biri — Universal Studios Beijing parkiga tashrif. Bu yerda butun oila uchun jahon darajasidagi attraksionlar mavjud. Shuningdek, Fan va texnologiya muzeyi hamda planetariyda robotlar, tajribalar va interaktiv ko‘rgazmalar orqali o‘rganish imkoniyati bo‘ladi.
+Sayohatning eng yorqin kunlaridan biri — Universal Studios Beijing parkiga tashrif. Bu yerda butun oila uchun jahon darajasidagi attraksionlar mavjud. Shuningdek, Fan va texnologiya muzeyi hamda planetariyda robotlar, tajribalar va interaktiv ko'rgazmalar orqali o'rganish imkoniyati bo'ladi.
 
-Safari parkda esa yovvoyi hayvonlar orasida haqiqiy sarguzasht kutmoqda. Erkin kun esa dam olish, shopping qilish va oilaviy vaqt o‘tkazish uchun ajratiladi.
+Safari parkda esa yovvoyi hayvonlar orasida haqiqiy sarguzasht kutmoqda. Erkin kun esa dam olish, shopping qilish va oilaviy vaqt o'tkazish uchun ajratiladi.
 
 Tur narxi — 1090 USD (ikki kishilik joylashuv). Bu sayohat oilani yanada yaqinlashtiradi va bolalar uchun unutilmas xotiralar qoldiradi.`,
     },
-  },
-  {
-    id: "6",
-    slug: "health-guangzhou-gulong",
-    title: {
-      ru: "Оздоровительный тур в Китай",
-      uz: "Xitoyga sog‘lomlashtiruvchi tur",
-    },
-    route: {
-      ru: "Гуанчжоу – Ущелье Гулун",
-      uz: "Guangzhou – Gulun darasi",
-    },
-    dates: {
-      ru: "10–16 апреля",
-      uz: "10–16 aprel",
-    },
-    price: "1090$",
-    photos: [
-      "/tours/health-guangzhou-gulong/IMG_0221.JPG",
-      "/tours/health-guangzhou-gulong/IMG_0223.PNG",
-    ],
-    highlights: {
-      ru: [
-        "Гуанчжоу — центр традиционной китайской медицины",
-        "Консультация специалиста в медицинском центре",
-        "Оздоровительные процедуры: гуаша, баночная терапия",
-        "Лечебный массаж туйна",
-        "Иглоукалывание и моксотерапия",
-        "Массаж головы и шеи",
-        "Ущелье Гулун — природное чудо юга Китая",
-        "Прогулка по долине «Тайна Гулун»",
-        "Каскадные водопады и тропические леса",
-        "Стеклянный мост над ущельем",
-        "Стоимость от 1090 USD (двухместное размещение)",
-      ],
-      uz: [
-        "Guangzhou — an’anaviy xitoy tibbiyot markazi",
-        "Tibbiyot markazida mutaxassis konsultatsiyasi",
-        "Sog‘lomlashtiruvchi muolajalar: guasha va banka terapiyasi",
-        "Davolovchi tuyna massaji",
-        "Igna terapiyasi va moksoterapiya",
-        "Bosh va bo‘yin massaji",
-        "Gulun darasi — Xitoy janubining tabiiy mo‘jizasi",
-        "“Gulun siri” vodiysida sayr",
-        "Kaskad sharsharalar va tropik o‘rmonlar",
-        "Dara ustidan o‘tgan mashhur shisha ko‘prik",
-        "Narxi 1090 USD dan (2 kishilik joylashuv)",
-      ],
-    },
-    content: {
-      ru: `Оздоровительный и экскурсионный тур в Китай — идеальное сочетание отдыха, восстановления здоровья и знакомства с природными красотами юга страны.
-
-Гуанчжоу — один из главных центров традиционной китайской медицины. Во время тура вы посетите профессиональный медицинский центр, где специалисты проведут консультацию и подберут процедуры для восстановления организма.
-
-В программу входят популярные методы традиционной китайской медицины: гуаша, баночная терапия, лечебный массаж туйна, иглоукалывание, моксотерапия, а также расслабляющий массаж головы и шеи.
-
-Вторая часть путешествия проходит в живописном ущелье Гулун — одном из самых красивых природных мест юга Китая. Здесь вас ждут тропические леса, каскадные водопады и прогулка по долине «Тайна Гулун».
-
-Особое впечатление оставит прогулка по знаменитому стеклянному мосту над ущельем, открывающему захватывающие виды на горные пейзажи.
-
-Тур сочетает отдых, оздоровление и яркие экскурсии, позволяя полностью восстановить силы и открыть для себя удивительную природу Китая. Стоимость тура — от 1090 USD при двухместном размещении.`,
-      uz: `Xitoyga sog‘lomlashtiruvchi va ekskursiya turi — dam olish, salomatlikni tiklash va mamlakat janubining go‘zal tabiatini kashf qilishning mukammal uyg‘unligi.
-
-Guangzhou shahri an’anaviy xitoy tibbiyotining muhim markazlaridan biri hisoblanadi. Sayohat davomida siz professional tibbiyot markaziga tashrif buyurasiz, bu yerda mutaxassislar konsultatsiya o‘tkazib, organizmni tiklash uchun kerakli muolajalarni tavsiya qiladilar.
-
-Dasturga an’anaviy xitoy tibbiyotining mashhur usullari kiradi: guasha, banka terapiyasi, davolovchi tuyna massaji, igna terapiyasi, moksoterapiya, shuningdek bosh va bo‘yin massaji.
-
-Sayohatning ikkinchi qismi Xitoy janubidagi eng chiroyli tabiiy joylardan biri bo‘lgan Gulun darasida davom etadi. Bu yerda tropik o‘rmonlar, kaskad sharsharalar va “Gulun siri” vodiysida sayr sizni kutmoqda.
-
-Eng hayratlanarli tajribalardan biri — daradan o‘tgan mashhur shisha ko‘prik bo‘ylab yurish bo‘lib, u tog‘ manzaralarining ajoyib ko‘rinishini taqdim etadi.
-
-Bu tur dam olish, sog‘lomlashtirish va qiziqarli ekskursiyalarni birlashtiradi hamda sizga Xitoyning noyob tabiatini kashf qilish imkonini beradi. Tur narxi — 1090 USD dan (ikki kishilik joylashuv).`,
-    },
+    updatedAt: SEED_DATE,
   },
 ]
-export function getTourBySlug(slug: string): Tour | undefined {
-  return tours.find((t) => t.slug === slug)
-}

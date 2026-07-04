@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Geist_Mono, Inter } from "next/font/google"
 
 import "./globals.css"
+import { Analytics } from "@/components/analytics"
 import { AppShell } from "@/components/app-shell"
 import { ThemeProvider } from "@/components/theme-provider"
 import { LanguageProvider } from "@/components/language-provider"
@@ -73,10 +74,6 @@ export const metadata: Metadata = {
   ],
   alternates: {
     canonical: "/",
-    languages: {
-      uz: "/uz",
-      ru: "/ru",
-    },
   },
   openGraph: {
     title: "Urban Travel - Xitoyga sayohat va biznes turlari",
@@ -86,7 +83,7 @@ export const metadata: Metadata = {
     siteName: "Urban Travel",
     images: [
       {
-        url: "/assets/logo.png",
+        url: "/assets/og.jpg",
         width: 1200,
         height: 630,
         alt: "Urban Travel - Xitoyga biznes safarlari",
@@ -100,7 +97,7 @@ export const metadata: Metadata = {
     title: "Urban Travel - Xitoyga sayohat va biznes turlari",
     description:
       "Urban Travel - Xitoyga sayohat va biznes turlari, IT va AI turlari, ko'rgazmalar, B2B uchrashuvlar, tarjimonlik xizmatlari va biznes delegatsiyalar.",
-    images: ["/assets/logo.png"],
+    images: ["/assets/og.jpg"],
   },
   icons: {
     icon: "/assets/logo.png",
@@ -141,6 +138,7 @@ export default function RootLayout({
             <AppShell>{children}</AppShell>
           </LanguageProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   )

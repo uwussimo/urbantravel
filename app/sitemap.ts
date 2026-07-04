@@ -1,9 +1,12 @@
 import type { MetadataRoute } from "next"
-import { tours } from "@/lib/tours"
+
+import { getActiveTours } from "@/lib/tour-store"
 
 const BASE_URL = "https://urban-travel.uz"
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const tours = await getActiveTours()
+
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: BASE_URL,
@@ -19,19 +22,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${BASE_URL}/about`,
-      lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
       url: `${BASE_URL}/contact`,
-      lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
       url: `${BASE_URL}/links`,
-      lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8,
     },
@@ -39,7 +39,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const tourRoutes: MetadataRoute.Sitemap = tours.map((tour) => ({
     url: `${BASE_URL}/tours/${tour.slug}`,
-    lastModified: new Date(),
+    lastModified: tour.updatedAt ? new Date(tour.updatedAt) : new Date(),
     changeFrequency: "weekly",
     priority: 0.8,
   }))
